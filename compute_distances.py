@@ -37,6 +37,88 @@ def parallel_distance(input, poi):
         print(f'feature file {features_file} does not exist!')
     return videoname, value
 
+
+def split_audio_to_new(input_file, output_folder="hadar_ref", segment_duration=6000):
+    # Load the audio file
+    audio = AudioSegment.from_file(input_file)
+
+    # Calculate the total duration of the audio in milliseconds
+    total_duration = len(audio)
+
+    # Calculate the number of segments needed
+    num_segments = total_duration // segment_duration
+
+    # Create the output folder if it doesn't exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Split the audio into segments
+    for i in range(num_segments):
+        start_time = i * segment_duration
+        end_time = (i + 1) * segment_duration
+        segment = audio[start_time:end_time]
+
+        # Generate the output file name
+        output_file = os.path.join(output_folder, f'{os.path.splitext(os.path.basename(input_file))[0]}_seg_{i + 1}.wav')
+        # Export the segment as a new audio file
+        segment.export(output_file, format='wav')
+
+    if num_segments==0:
+        output_file = os.path.join(output_folder,
+                                   f'{os.path.splitext(os.path.basename(input_file))[0]}.wav')
+        # Export the segment as a new audio file
+        segment.export(output_file, format='wav')
+
+
+    print(f'{num_segments} segments created successfully.')
+
+
+def split_all_ref(input_folder, output_folder):
+    # Iterate over all files in the input folder
+    for filename in os.listdir(input_folder):
+        if filename.endswith(".wav"):  # You can adjust the file extension if needed
+            input_file_path = os.path.join(input_folder, filename)
+            # output_file_path= os.path.join(output_folder, os.path.splitext(filename)[0])
+
+            # Split ref audio file and save in a subfolder- if too long
+            if filename.startswith("ref_"):
+                split_audio_to_new(input_file=input_file_path, output_folder=output_folder)
+            else:
+                output_file = os.path.join(output_folder,
+                                           f'{os.path.splitext(os.path.basename(input_file_path))[0]}.wav')
+                audio = AudioSegment.from_file(input_file_path)
+                audio.export(output_file, format='wav')
+                
+def create_metadata_csv(input_folder, output_csv, poi="Hadar", context="0"):  # will run on the splitted audio's dir
+    import os
+    import csv
+    # Check if the input folder exists
+    if not os.path.exists(input_folder):
+        print(f"Error: The input folder '{input_folder}' does not exist.")
+        return
+
+    # Create a CSV file for metadata
+    with open(output_csv, mode='w', newline='') as csv_file:
+        fieldnames = ['videoname', 'filepath', 'poi', 'context', 'label', 'in_tst', 'in_ref']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+        # Write the header row to the CSV file
+        writer.writeheader()
+
+        # Iterate over all files in the input folder
+        for filename in os.listdir(input_folder):
+            if filename.endswith(".wav"):  # You can adjust the file extension if needed
+                videoname = os.path.splitext(filename)[0]
+                filepath = os.path.abspath(os.path.join(input_folder, filename))
+                label = 0 # Default label is 0- used for evaluation only!
+                in_tst = 1 if filename.startswith('tst_') else 0
+                in_ref = 1 if filename.startswith('ref_') else 0
+
+                # Write the row to the CSV file
+                writer.writerow({'videoname': videoname, 'filepath': filepath, 'poi': poi,
+                                 'context': context, 'label': label, 'in_tst': in_tst, 'in_ref': in_ref})
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-csv', type=str, default=None)
