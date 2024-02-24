@@ -120,6 +120,13 @@ def create_metadata_csv(input_folder, output_csv, poi="Hadar", context="0"):  # 
 
 
 if __name__ == '__main__':
+    # input_folder = "datasetSpeechByUs"
+    # output_folder = "HadarDataset"
+    # output_csv = 'CSVs/dataset.csv'
+    # poi = "Hadar"
+    # context = "0"
+    # split_all_ref(input_folder, output_folder)
+    # create_metadata_csv(output_folder,output_csv,poi,context)
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-csv', type=str, default=None)
     parser.add_argument('--dataset-name', type=str, default=None)
